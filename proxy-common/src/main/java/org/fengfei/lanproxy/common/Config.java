@@ -26,6 +26,10 @@ public class Config {
         initConfig(configFile);
     }
 
+    /**
+     * 读取配置文件configFIle中的内容进configuration中
+     * @param configFile
+     */
     private void initConfig(String configFile) {
         InputStream is = Config.class.getClassLoader().getResourceAsStream(configFile);
         try {
@@ -37,16 +41,16 @@ public class Config {
     }
 
     /**
-     * 获得Configuration实例。 默认为config.property
+     * 获得Config实例。 默认为config.properties
      *
-     * @return Configuration实例
+     * @return Config实例
      */
     public static Config getInstance() {
         return getInstance(DEFAULT_CONF);
     }
 
     /**
-     * 自定义文件解析**.property
+     * 获得Config实例。
      *
      * @param configFile
      * @return

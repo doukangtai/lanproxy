@@ -1,25 +1,14 @@
 package org.fengfei.lanproxy.server.config;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.Serializable;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.google.gson.reflect.TypeToken;
 import org.fengfei.lanproxy.common.Config;
 import org.fengfei.lanproxy.common.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.reflect.TypeToken;
+import java.io.*;
+import java.nio.charset.Charset;
+import java.util.*;
 
 /**
  * server config
@@ -36,6 +25,9 @@ public class ProxyConfig implements Serializable {
 
     private static Logger logger = LoggerFactory.getLogger(ProxyConfig.class);
 
+    /**
+     * 初始化CONFIG_FILE变量为{user.home}/.lanproxy/config.json
+     */
     static {
 
         // 代理配置信息存放在用户根目录下
@@ -161,6 +153,7 @@ public class ProxyConfig implements Serializable {
 
         File file = new File(CONFIG_FILE);
         try {
+            // 通过config.json文件初始化proxyMappingConfigJson属性
             if (proxyMappingConfigJson == null && file.exists()) {
                 InputStream in = new FileInputStream(file);
                 byte[] buf = new byte[1024];
@@ -177,6 +170,7 @@ public class ProxyConfig implements Serializable {
             throw new RuntimeException(e);
         }
 
+        // 全部clients关系
         List<Client> clients = JsonUtil.json2object(proxyMappingConfigJson, new TypeToken<List<Client>>() {
         });
         if (clients == null) {
@@ -186,13 +180,14 @@ public class ProxyConfig implements Serializable {
         Map<String, List<Integer>> clientInetPortMapping = new HashMap<String, List<Integer>>();
         Map<Integer, String> inetPortLanInfoMapping = new HashMap<Integer, String>();
 
-        // 构造端口映射关系
+        // 构造端口映射关系，主要是clientInetPortMapping和inetPortLanInfoMapping更新
         for (Client client : clients) {
             String clientKey = client.getClientKey();
             if (clientInetPortMapping.containsKey(clientKey)) {
                 throw new IllegalArgumentException("密钥同时作为客户端标识，不能重复： " + clientKey);
             }
             List<ClientProxyMapping> mappings = client.getProxyMappings();
+            // 每个client在服务端暴露端口
             List<Integer> ports = new ArrayList<Integer>();
             clientInetPortMapping.put(clientKey, ports);
             for (ClientProxyMapping mapping : mappings) {
@@ -211,6 +206,7 @@ public class ProxyConfig implements Serializable {
         this.inetPortLanInfoMapping = inetPortLanInfoMapping;
         this.clients = clients;
 
+        // 持久化数据到config.json文件中
         if (proxyMappingConfigJson != null) {
             try {
                 FileOutputStream out = new FileOutputStream(file);
