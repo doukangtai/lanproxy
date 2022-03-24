@@ -61,6 +61,10 @@ public class ProxyServerContainer implements Container, ConfigChangedListener {
         ProxyConfig.getInstance().addConfigChangedListener(this);
     }
 
+    /**
+     * 绑定serverPort端口
+     * 绑定内网服务需要暴露的端口
+     */
     @Override
     public void start() {
         ServerBootstrap bootstrap = new ServerBootstrap();
@@ -122,6 +126,9 @@ public class ProxyServerContainer implements Container, ConfigChangedListener {
         }
     }
 
+    /**
+     * 绑定所有需要暴露在服务端的端口
+     */
     private void startUserPort() {
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(serverBossGroup, serverWorkerGroup).channel(NioServerSocketChannel.class).childHandler(new ChannelInitializer<SocketChannel>() {
