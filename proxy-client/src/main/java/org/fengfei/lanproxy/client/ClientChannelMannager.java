@@ -40,10 +40,16 @@ public class ClientChannelMannager {
 
     private static ConcurrentLinkedQueue<Channel> proxyChannelPool = new ConcurrentLinkedQueue<Channel>();
 
+    // 连接公网channel
     private static volatile Channel cmdChannel;
 
     private static Config config = Config.getInstance();
 
+    /**
+     *
+     * @param bootstrap 连接到公网
+     * @param borrowListener
+     */
     public static void borrowProxyChanel(Bootstrap bootstrap, final ProxyChannelBorrowListener borrowListener) {
         Channel channel = proxyChannelPool.poll();
         if (channel != null) {
@@ -65,6 +71,10 @@ public class ClientChannelMannager {
         });
     }
 
+    /**
+     *
+     * @param proxyChanel 连接公网channel
+     */
     public static void returnProxyChanel(Channel proxyChanel) {
         if (proxyChannelPool.size() > MAX_POOL_SIZE) {
             proxyChanel.close();
@@ -112,6 +122,9 @@ public class ClientChannelMannager {
         return realServerChannel.attr(CLIENT_CHANNEL_WRITEABLE).get() && realServerChannel.attr(USER_CHANNEL_WRITEABLE).get();
     }
 
+    /**
+     * 断开并清除所有连接到内网的channel
+     */
     public static void clearRealServerChannels() {
         logger.warn("channel closed, clear real server channels");
 

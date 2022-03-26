@@ -18,7 +18,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.SimpleChannelInboundHandler;
 
 /**
- *
+ * 处理监听server.port的信息
  * @author fengfei
  *
  */

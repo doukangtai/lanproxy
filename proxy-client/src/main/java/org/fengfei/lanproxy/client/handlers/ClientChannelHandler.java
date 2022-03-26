@@ -20,7 +20,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.SimpleChannelInboundHandler;
 
 /**
- *
+ * 处理server.host:server.port的消息
  * @author fengfei
  *
  */
@@ -28,8 +28,10 @@ public class ClientChannelHandler extends SimpleChannelInboundHandler<ProxyMessa
 
     private static Logger logger = LoggerFactory.getLogger(ClientChannelHandler.class);
 
+    // 连接内网服务
     private Bootstrap bootstrap;
 
+    // 连接公网服务器
     private Bootstrap proxyBootstrap;
 
     private ChannelStatusListener channelStatusListener;
@@ -68,7 +70,13 @@ public class ClientChannelHandler extends SimpleChannelInboundHandler<ProxyMessa
         }
     }
 
+    /**
+     * 断开内网连接
+     * @param ctx
+     * @param proxyMessage
+     */
     private void handleDisconnectMessage(ChannelHandlerContext ctx, ProxyMessage proxyMessage) {
+        // 连接内网channel
         Channel realServerChannel = ctx.channel().attr(Constants.NEXT_CHANNEL).get();
         logger.debug("handleDisconnectMessage, {}", realServerChannel);
         if (realServerChannel != null) {
@@ -78,9 +86,16 @@ public class ClientChannelHandler extends SimpleChannelInboundHandler<ProxyMessa
         }
     }
 
+    /**
+     * 连接到本地内网服务
+     * @param ctx
+     * @param proxyMessage
+     */
     private void handleConnectMessage(ChannelHandlerContext ctx, ProxyMessage proxyMessage) {
+        // 连接到公网channel
         final Channel cmdChannel = ctx.channel();
         final String userId = proxyMessage.getUri();
+        // 127.0.0.1:22
         String[] serverInfo = new String(proxyMessage.getData()).split(":");
         String ip = serverInfo[0];
         int port = Integer.parseInt(serverInfo[1]);
@@ -91,6 +106,7 @@ public class ClientChannelHandler extends SimpleChannelInboundHandler<ProxyMessa
 
                 // 连接后端服务器成功
                 if (future.isSuccess()) {
+                    // 连接到内网channel
                     final Channel realServerChannel = future.channel();
                     logger.debug("connect realserver success, {}", realServerChannel);
 
@@ -152,6 +168,7 @@ public class ClientChannelHandler extends SimpleChannelInboundHandler<ProxyMessa
         if (ClientChannelMannager.getCmdChannel() == ctx.channel()) {
             ClientChannelMannager.setCmdChannel(null);
             ClientChannelMannager.clearRealServerChannels();
+            // 等待一段时间，重连公网服务（断线重连？）
             channelStatusListener.channelInactive(ctx);
         } else {
             // 数据传输连接

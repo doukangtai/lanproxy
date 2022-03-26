@@ -15,7 +15,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.SimpleChannelInboundHandler;
 
 /**
- * 处理服务端 channel.
+ * 处理监听用户需要暴露端口的信息
  */
 public class UserChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 

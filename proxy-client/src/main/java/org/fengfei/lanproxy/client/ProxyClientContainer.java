@@ -45,8 +45,10 @@ public class ProxyClientContainer implements Container, ChannelStatusListener {
 
     private NioEventLoopGroup workerGroup;
 
+    // 用来连接server.host:server.port
     private Bootstrap bootstrap;
 
+    // 用来连接本地内网服务
     private Bootstrap realServerBootstrap;
 
     private Config config = Config.getInstance();
