@@ -36,6 +36,7 @@ public class ClientChannelMannager {
 
     private static final int MAX_POOL_SIZE = 100;
 
+    // Map<userId, realServerChannel>
     private static Map<String, Channel> realServerChannels = new ConcurrentHashMap<String, Channel>();
 
     private static ConcurrentLinkedQueue<Channel> proxyChannelPool = new ConcurrentLinkedQueue<Channel>();

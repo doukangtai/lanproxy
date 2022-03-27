@@ -111,8 +111,10 @@ public class ServerChannelHandler extends SimpleChannelInboundHandler<ProxyMessa
             return;
         }
 
+        // tokens[0]为userId，tokens[1]为clientKey
         Channel userChannel = ProxyChannelManager.getUserChannel(cmdChannel, tokens[0]);
         if (userChannel != null) {
+            // 用户通过公网IP:PORT访问，进入UserChannelHandler，建立新的userChannel，并将userChannel、userId绑定到对应公网PORT所对应的client key的channel中，因此可以通过ProxyChannelManager.getUserChannel(cmdChannel, tokens[0]);获取到新建的userChannel，将内网机器新连接过来的ctx.channel()与新的userChannel绑定，方便本类中handleTransferMessage方法获取到对应的userChannel转发数据
             ctx.channel().attr(Constants.USER_ID).set(tokens[0]);
             ctx.channel().attr(Constants.CLIENT_KEY).set(tokens[1]);
             ctx.channel().attr(Constants.NEXT_CHANNEL).set(userChannel);

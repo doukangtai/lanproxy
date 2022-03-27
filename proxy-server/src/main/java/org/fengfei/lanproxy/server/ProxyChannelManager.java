@@ -29,6 +29,7 @@ public class ProxyChannelManager {
 
     private static Logger logger = LoggerFactory.getLogger(ProxyChannelManager.class);
 
+    // map中string对应userId，channel对应用户访问公网端口对应channel
     private static final AttributeKey<Map<String, Channel>> USER_CHANNELS = AttributeKey.newInstance("user_channels");
 
     private static final AttributeKey<String> REQUEST_LAN_INFO = AttributeKey.newInstance("request_lan_info");
@@ -37,8 +38,10 @@ public class ProxyChannelManager {
 
     private static final AttributeKey<String> CHANNEL_CLIENT_KEY = AttributeKey.newInstance("channel_client_key");
 
+    // 应该是公网暴露端口对应client key的proxy channel，并且channel中使用attr绑定的是userId和userChannel
     private static Map<Integer, Channel> portCmdChannelMapping = new ConcurrentHashMap<Integer, Channel>();
 
+    // client key --- proxy channel映射
     private static Map<String, Channel> cmdChannels = new ConcurrentHashMap<String, Channel>();
 
     static {
@@ -46,11 +49,13 @@ public class ProxyChannelManager {
 
             /**
              * 代理配置发生变化时回调
+             * 主要是更新维护portCmdChannelMapping中暴露公网port到proxy channel的关系和client key对应proxyChannel到暴露公网ports的关系
              */
             @Override
             public synchronized void onChanged() {
                 Iterator<Entry<String, Channel>> ite = cmdChannels.entrySet().iterator();
                 while (ite.hasNext()) {
+                    // client key --- proxy channel
                     Channel proxyChannel = ite.next().getValue();
                     String clientKey = proxyChannel.attr(CHANNEL_CLIENT_KEY).get();
 
@@ -62,14 +67,18 @@ public class ProxyChannelManager {
                     }
 
                     if (proxyChannel.isActive()) {
+                        // 从新配置文件中获取指定clientKey对应端口列表，后面会去除旧连接使用的端口，最终会剩下新增的端口
                         List<Integer> inetPorts = new ArrayList<Integer>(ProxyConfig.getInstance().getClientInetPorts(clientKey));
+                        // 从新配置文件中获取指定clientKey对应端口列表
                         Set<Integer> inetPortSet = new HashSet<Integer>(inetPorts);
+                        // 旧的连接关系
                         List<Integer> channelInetPorts = new ArrayList<Integer>(proxyChannel.attr(CHANNEL_PORT).get());
 
                         synchronized (portCmdChannelMapping) {
 
                             // 移除旧的连接映射关系
                             for (int chanelInetPort : channelInetPorts) {
+                                // 用户请求公网端口channel
                                 Channel channel = portCmdChannelMapping.get(chanelInetPort);
                                 if (channel == null) {
                                     continue;
@@ -101,6 +110,7 @@ public class ProxyChannelManager {
                     }
                 }
 
+                // 打印日志信息
                 ite = cmdChannels.entrySet().iterator();
                 while (ite.hasNext()) {
                     Entry<String, Channel> entry = ite.next();
@@ -110,11 +120,12 @@ public class ProxyChannelManager {
             }
 
             /**
-             * 检测连接配置是否与当前配置一致，不一致则关闭
+             * 检测配置文件连接配置是否与当前配置一致，不一致则关闭当前配置userChannel并清除
              *
-             * @param proxyChannel
+             * @param proxyChannel client key 对应 proxy channel
              */
             private void checkAndClearUserChannels(Channel proxyChannel) {
+                // Map<userId, 用户访问公网端口对应channel>
                 Map<String, Channel> userChannels = getUserChannels(proxyChannel);
                 Iterator<Entry<String, Channel>> userChannelIte = userChannels.entrySet().iterator();
                 while (userChannelIte.hasNext()) {
@@ -140,7 +151,7 @@ public class ProxyChannelManager {
      * 增加代理服务器端口与代理控制客户端连接的映射关系
      *
      * @param ports
-     * @param channel
+     * @param channel 指client key对应proxy channel
      */
     public static void addCmdChannel(List<Integer> ports, String clientKey, Channel channel) {
 
@@ -158,6 +169,7 @@ public class ProxyChannelManager {
 
         channel.attr(CHANNEL_PORT).set(ports);
         channel.attr(CHANNEL_CLIENT_KEY).set(clientKey);
+        // client key 对应的channel与用户访问公网channel对应关系,map<userId,userChannel>
         channel.attr(USER_CHANNELS).set(new ConcurrentHashMap<String, Channel>());
         cmdChannels.put(clientKey, channel);
     }

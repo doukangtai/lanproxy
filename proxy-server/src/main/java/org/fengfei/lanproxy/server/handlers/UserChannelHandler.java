@@ -28,6 +28,12 @@ public class UserChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
         ctx.close();
     }
 
+    /**
+     * 读取用户访问公网IP对应暴露的端口时产生的数据，并通过proxyChannel将数据发送到对应client key的内网用户
+     * @param ctx
+     * @param buf
+     * @throws Exception
+     */
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf buf) throws Exception {
 
@@ -50,6 +56,11 @@ public class UserChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
         }
     }
 
+    /**
+     * 在有用户请求对应公网端口时，向内网机器发送消息，让内网机器连接到需要暴露到公网的内网服务
+     * @param ctx
+     * @throws Exception
+     */
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         Channel userChannel = ctx.channel();
@@ -76,6 +87,11 @@ public class UserChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
         super.channelActive(ctx);
     }
 
+    /**
+     * 在用户访问暴露的公网端口，关闭会话连接时，通知内网机器，关闭内网机器连接到内网服务的连接
+     * @param ctx
+     * @throws Exception
+     */
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 
@@ -92,6 +108,7 @@ public class UserChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
             // 用户连接断开，从控制连接中移除
             String userId = ProxyChannelManager.getUserChannelUserId(userChannel);
             ProxyChannelManager.removeUserChannelFromCmdChannel(cmdChannel, userId);
+            // 与userChannel对应绑定的proxyChannel
             Channel proxyChannel = userChannel.attr(Constants.NEXT_CHANNEL).get();
             if (proxyChannel != null && proxyChannel.isActive()) {
                 proxyChannel.attr(Constants.NEXT_CHANNEL).remove();

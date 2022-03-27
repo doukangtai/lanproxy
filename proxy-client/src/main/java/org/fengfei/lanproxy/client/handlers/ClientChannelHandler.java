@@ -81,6 +81,7 @@ public class ClientChannelHandler extends SimpleChannelInboundHandler<ProxyMessa
         logger.debug("handleDisconnectMessage, {}", realServerChannel);
         if (realServerChannel != null) {
             ctx.channel().attr(Constants.NEXT_CHANNEL).remove();
+            // 当用户访问公网端口到UserChannelHandler时会建立channel连接，在断开时，会给ClientChannelHandler发送消息，断开realServerChannel的连接，但是本地机器与公网机器的ctx.channel()不会断开，可以放进proxyChannelPool中，供以后使用
             ClientChannelMannager.returnProxyChanel(ctx.channel());
             realServerChannel.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
         }
@@ -106,13 +107,13 @@ public class ClientChannelHandler extends SimpleChannelInboundHandler<ProxyMessa
 
                 // 连接后端服务器成功
                 if (future.isSuccess()) {
-                    // 连接到内网channel
+                    // 连接到内网服务的channel
                     final Channel realServerChannel = future.channel();
                     logger.debug("connect realserver success, {}", realServerChannel);
 
                     realServerChannel.config().setOption(ChannelOption.AUTO_READ, false);
 
-                    // 获取连接
+                    // 获取一个连接到server.bind:server.port的channel
                     ClientChannelMannager.borrowProxyChanel(proxyBootstrap, new ProxyChannelBorrowListener() {
 
                         @Override
